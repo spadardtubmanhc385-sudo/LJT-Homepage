@@ -1,8 +1,0 @@
-# Header links for the personal homepage.
-
-main:
-  - title: "About"
-    url: /
-
-  - title: "Publications"
-    url: /publications/
