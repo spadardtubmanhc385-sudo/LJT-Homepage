@@ -40,18 +40,25 @@ jobs:
         run: bundle exec jekyll build --baseurl "/LJT-Homepage"
         env:
           JEKYLL_ENV: production
-      - name: Check GitHub Pages publishing status
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -sS -o /tmp/pages-status.json -w 'Pages API status: %{http_code}\n' \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/pages" || true
-          cat /tmp/pages-status.json
       - name: Deploy generated site to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: _site
           branch: gh-pages
           clean: true
+      - name: Verify the published pages
+        run: |
+          for path in "" "publications/"; do
+            url="https://${GITHUB_REPOSITORY_OWNER}.github.io/LJT-Homepage/${path}"
+            status="000"
+            for attempt in 1 2 3 4 5 6; do
+              status=$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)
+              if [ "$status" = "200" ]; then
+                echo "OK: $url"
+                break
+              fi
+              echo "Attempt ${attempt}: HTTP ${status} for $url"
+              sleep 10
+            done
+            test "$status" = "200"
+          done
